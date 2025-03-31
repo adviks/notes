@@ -7,4 +7,3 @@ title = "Current Affairs"
 
 [output.html]
 theme = "theme"
-default-theme = "light"
