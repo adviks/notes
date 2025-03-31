@@ -103,7 +103,17 @@ h6:target::before {
     margin-inline-end: auto;
     max-width: var(--content-max-width);
 }
-.content p { line-height: 1.45em; }
+.content p { 
+line-height: 1.45em; 
+font-family: 'Times New Roman', Times, serif;
+font-size: 1.1em;
+
+}
+
+.content h1{
+    font-size: 1.6em;
+    letter-spacing: 0.8;
+}
 .content ol { line-height: 1.45em; }
 .content ul { line-height: 1.45em; }
 .content a { text-decoration: none; }

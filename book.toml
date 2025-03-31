@@ -7,3 +7,4 @@ title = "Current Affairs"
 
 [output.html]
 theme = "theme"
+smart-punctuation = true
