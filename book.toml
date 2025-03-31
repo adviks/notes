@@ -1,0 +1,6 @@
+[book]
+authors = ["Samar"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Current Affairs"
