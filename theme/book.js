@@ -283,166 +283,70 @@ function playground_text(playground, hidden = true) {
         }
     });
 })();
+(function () {
+    const html = document.documentElement;
+    const themeToggleButton = document.getElementById('theme-toggle');
+    const themeColorMetaTag = document.querySelector('meta[name="theme-color"]');
 
-(function themes() {
-    var html = document.querySelector('html');
-    var themeToggleButton = document.getElementById('theme-toggle');
-    var themePopup = document.getElementById('theme-list');
-    var themeColorMetaTag = document.querySelector('meta[name="theme-color"]');
-    var themeIds = [];
-    themePopup.querySelectorAll('button.theme').forEach(function (el) {
-        themeIds.push(el.id);
-    });
-    var stylesheets = {
-        ayuHighlight: document.querySelector("#ayu-highlight-css"),
-        tomorrowNight: document.querySelector("#tomorrow-night-css"),
+    const stylesheets = {
         highlight: document.querySelector("#highlight-css"),
+        tomorrowNight: document.querySelector("#tomorrow-night-css"),
     };
 
-    function showThemes() {
-        themePopup.style.display = 'block';
-        themeToggleButton.setAttribute('aria-expanded', true);
-        themePopup.querySelector("button#" + get_theme()).focus();
-    }
-
-    function updateThemeSelected() {
-        themePopup.querySelectorAll('.theme-selected').forEach(function (el) {
-            el.classList.remove('theme-selected');
-        });
-        themePopup.querySelector("button#" + get_theme()).classList.add('theme-selected');
-    }
-
-    function hideThemes() {
-        themePopup.style.display = 'none';
-        themeToggleButton.setAttribute('aria-expanded', false);
-        themeToggleButton.focus();
-    }
-
     function get_theme() {
-        var theme;
-        try { theme = localStorage.getItem('mdbook-theme'); } catch (e) { }
-        if (theme === null || theme === undefined || !themeIds.includes(theme)) {
-            return default_theme;
-        } else {
-            return theme;
-        }
+        try {
+            const stored = localStorage.getItem('mdbook-theme');
+            if (stored === 'navy' || stored === 'light') {
+                return stored;
+            }
+        } catch (e) {}
+        return 'light'; // default
+    }
+
+    function updateToggleText(theme) {
+        themeToggleButton.textContent = theme === 'navy' ? 'Dark' : 'Light';
     }
 
     function set_theme(theme, store = true) {
-        let ace_theme;
+        const isDark = theme === 'navy';
 
-        if (theme == 'coal' || theme == 'navy') {
-            stylesheets.ayuHighlight.disabled = true;
-            stylesheets.tomorrowNight.disabled = false;
-            stylesheets.highlight.disabled = true;
-
-            ace_theme = "ace/theme/tomorrow_night";
-        } else if (theme == 'ayu') {
-            stylesheets.ayuHighlight.disabled = false;
-            stylesheets.tomorrowNight.disabled = true;
-            stylesheets.highlight.disabled = true;
-            ace_theme = "ace/theme/tomorrow_night";
-        } else {
-            stylesheets.ayuHighlight.disabled = true;
-            stylesheets.tomorrowNight.disabled = true;
-            stylesheets.highlight.disabled = false;
-            ace_theme = "ace/theme/dawn";
-        }
-
-        setTimeout(function () {
-            themeColorMetaTag.content = getComputedStyle(document.documentElement).backgroundColor;
-        }, 1);
+        stylesheets.highlight.disabled = isDark;
+        stylesheets.tomorrowNight.disabled = !isDark;
 
         if (window.ace && window.editors) {
-            window.editors.forEach(function (editor) {
-                editor.setTheme(ace_theme);
-            });
+            const ace_theme = isDark ? "ace/theme/tomorrow_night" : "ace/theme/dawn";
+            window.editors.forEach(editor => editor.setTheme(ace_theme));
         }
 
-        var previousTheme = get_theme();
+        html.classList.remove('light', 'navy');
+        html.classList.add(theme);
+
+        updateToggleText(theme);
+
+        setTimeout(() => {
+            themeColorMetaTag.content = getComputedStyle(html).backgroundColor;
+        }, 1);
 
         if (store) {
-            try { localStorage.setItem('mdbook-theme', theme); } catch (e) { }
+            try {
+                localStorage.setItem('mdbook-theme', theme);
+            } catch (e) {}
         }
-
-        html.classList.remove(previousTheme);
-        html.classList.add(theme);
-        updateThemeSelected();
     }
 
-    // Set theme
-    var theme = get_theme();
+    function toggle_theme() {
+        const newTheme = get_theme() === 'navy' ? 'light' : 'navy';
+        set_theme(newTheme);
+    }
 
-    set_theme(theme, false);
+    // Init
+    const initialTheme = get_theme();
+    set_theme(initialTheme, false);
 
-    themeToggleButton.addEventListener('click', function () {
-        if (themePopup.style.display === 'block') {
-            hideThemes();
-        } else {
-            showThemes();
-        }
-    });
-
-    themePopup.addEventListener('click', function (e) {
-        var theme;
-        if (e.target.className === "theme") {
-            theme = e.target.id;
-        } else if (e.target.parentElement.className === "theme") {
-            theme = e.target.parentElement.id;
-        } else {
-            return;
-        }
-        set_theme(theme);
-    });
-
-    themePopup.addEventListener('focusout', function(e) {
-        // e.relatedTarget is null in Safari and Firefox on macOS (see workaround below)
-        if (!!e.relatedTarget && !themeToggleButton.contains(e.relatedTarget) && !themePopup.contains(e.relatedTarget)) {
-            hideThemes();
-        }
-    });
-
-    // Should not be needed, but it works around an issue on macOS & iOS: https://github.com/rust-lang/mdBook/issues/628
-    document.addEventListener('click', function(e) {
-        if (themePopup.style.display === 'block' && !themeToggleButton.contains(e.target) && !themePopup.contains(e.target)) {
-            hideThemes();
-        }
-    });
-
-    document.addEventListener('keydown', function (e) {
-        if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) { return; }
-        if (!themePopup.contains(e.target)) { return; }
-
-        switch (e.key) {
-            case 'Escape':
-                e.preventDefault();
-                hideThemes();
-                break;
-            case 'ArrowUp':
-                e.preventDefault();
-                var li = document.activeElement.parentElement;
-                if (li && li.previousElementSibling) {
-                    li.previousElementSibling.querySelector('button').focus();
-                }
-                break;
-            case 'ArrowDown':
-                e.preventDefault();
-                var li = document.activeElement.parentElement;
-                if (li && li.nextElementSibling) {
-                    li.nextElementSibling.querySelector('button').focus();
-                }
-                break;
-            case 'Home':
-                e.preventDefault();
-                themePopup.querySelector('li:first-child button').focus();
-                break;
-            case 'End':
-                e.preventDefault();
-                themePopup.querySelector('li:last-child button').focus();
-                break;
-        }
-    });
+    // Add listener
+    themeToggleButton.addEventListener('click', toggle_theme);
 })();
+
 
 (function sidebar() {
     var body = document.querySelector("body");
